@@ -55,7 +55,7 @@
 # ----------------------------------
 logging = True
 
-# Uncomment this log_file variable and set it where you want,
+# Uncomment this log_file variable and set it to log where you want,
 # otherwise the log will be written by default to a date/time stamped log
 # file in the /tmp directory like:
 #
@@ -208,7 +208,7 @@ def cmd_exists(cmd):
 
 def get_uname():
     'Get the OS uname to be use in other tests.'
-    cmd = uname_bin
+    cmd = 'uname'
     log('Getting OS\'s uname so we can use it for other tests')
     if debug:
         log('shell command: ' + cmd)
@@ -237,7 +237,7 @@ def get_sg_node():
         # TODO: waa - 20240302 - These lines before the if statement
         # are not necessary. Probably are here for logging mainly.
         # -----------------------------------------------------------
-        cmd = ls_bin + ' -l ' + drive_device
+        cmd = 'ls -l ' + drive_device
         if debug:
             log('ls command: ' + cmd)
         result = get_shell_result(cmd)
@@ -258,7 +258,7 @@ def get_sg_node():
             # The ls command outputs a line feed that needs to be stripped
             # ------------------------------------------------------------
             st = '/dev/' + re.sub('.* -> .*/n*(st\d+).*$', '\\1', result.stdout.rstrip('\n'), re.S)
-        cmd = lsscsi_bin + ' -g'
+        cmd = 'lsscsi -g'
         if debug:
             log('lsscsi command: ' + cmd)
         result = get_shell_result(cmd)
@@ -285,7 +285,7 @@ def get_sg_node():
         # <STK T10000B 0107>    at scbus5 target 0 lun 0 (pass4,sa1)
         # <STK T10000B 0107>    at scbus6 target 0 lun 0 (pass6,sa3)
         # -----------------------------------------------------------
-        cmd = camcontrol_bin + ' devlist'
+        cmd = camcontrol + ' devlist'
         log('camcontrol command: ' + cmd)
         result = get_shell_result(cmd)
         log_cmd_results(result)
@@ -300,7 +300,7 @@ def get_sg_node():
         return 1
 
 def tapealerts(sg):
-    'Call the tapeinfo_bin and return any tape alerts.'
+    'Call tapeinfo and return any tape alerts.'
     # TODO - waa - 20231127 - I have found that sometimes tapeinfo does not show any
     #                         TapeAlert messages, but `sg_logs` from sg3_utils package
     #                         always reports if the drive needs cleaning with the
@@ -313,7 +313,7 @@ def tapealerts(sg):
     # ----------------------------------------------------
     # Call tapeinfo and parse for alerts
     # ----------------------------------
-    cmd = tapeinfo_bin + ' -f ' + sg
+    cmd = 'tapeinfo -f ' + sg
     if debug:
         log('tapeinfo command: ' + cmd)
     result = get_shell_result(cmd)
@@ -369,8 +369,6 @@ else:
         if not bin:
             log('Exiting return code 1')
             sys.exit(1)
-        else:
-            globals()[cmd + '_bin'] = bin
 
     # Get the OS' uname
     # -----------------
@@ -382,13 +380,13 @@ else:
 
     # Now call tapealerts() to identify and output any tape alerts
     # ------------------------------------------------------------
-    log('Calling tapealerts() to check for any tapeinfo alerts')
+    log('Checking for any tapeinfo TapeAlerts')
     tapealerts_txt = tapealerts(sg)
 
 # Now, parse and print any tapealerts found
 # -----------------------------------------
 if len(tapealerts_txt) > 0:
-    log('WARN: ' + str(len(tapealerts_txt)) + ' tape alert' + ('s' if len(tapealerts_txt) > 1 else '') \
+    log('WARN: ' + str(len(tapealerts_txt)) + ' TapeAlert' + ('s' if len(tapealerts_txt) > 1 else '') \
         + ' found for drive device ' + drive_device + ' (' + sg + '):')
     for alert in tapealerts_txt:
         # The tape alert text needs to be printed to stdout for the SD to
@@ -397,6 +395,6 @@ if len(tapealerts_txt) > 0:
         print(alert[1])
         log('      [' + alert[0] + ']: ' + alert[1])
 else:
-    log('No tape alerts found')
+    log('No TapeAlerts found')
 log('-'*100, ftr=True)
 log(prog_info_txt, ftr=True)
