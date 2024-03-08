@@ -119,7 +119,7 @@ Usage:
 
 Options:
   drive_device   The drive's /dev/sg*, /dev/nst#, or /dev/tape/by-id/*-nst, or /dev/tape/by-path/* node.
-  test           Run in test mode? Edit the 'fake_tapeinfo_txt' string to suit.
+  test           Run in test mode? Edit the 'fake_tapeinfo_txt' string in this script to suit.
   debug          Log a lot more output, including system utility outputs.
   logging        Should the script log anything at all? Default is False!
 
