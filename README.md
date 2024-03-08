@@ -21,13 +21,11 @@ Historically, the `ControlDevice` would be set to a tape drive device's SCSI Gen
 The AlertCommand is typically set to point to the `/opt/bacula/scripts/tapealert` sample bash script which is shipped with Bacula, and the `%l` represents the "archive control channel name" (ie: ControlDevice) that will be passed to the AlertCommand script.
 
 ## THE PROBLEM:
-
 A tape drive's SG node may change after a reboot, depending on when the kernel identifies and enumerates it. This represents a problem since the Bacula SD's Tape Drive resource configurations (including this ControlDevice setting) are usually set once during configuration and then left.
 
 If the ControlDevice setting is pointing to the wrong SG node, the TapeAlert feature in the Bacula SD will not function properly, because the AlertCommand script will be called with the wrong SG node to test.
 
 ## THE SOLUTION:
-
 This `bacula-tapealert.py` drop-in replacement script! :)
 
 This script is able to automatically determine the *current* and correct SG node device for the tape drive on-the-fly.
@@ -42,7 +40,6 @@ AlertCommand = "/opt/bacula/scripts/bacula-tapealert.py %l logging test" *see no
 ```
 
 ## INSTALLATION, CONFIGURATION, AND USE:
-
 ### Installation:
 To use this script in place of the default `/opt/bacula/scripts/tapealert` script, copy it to '/opt/bacula/scripts', set it executable, and set the owner to the user that the Bacula SD runs as (typically 'bacula'):
 ```
@@ -77,7 +74,6 @@ logging        Should the script log anything at all? Default is False!
 ```
 
 ### Testing:
-
 #### Command Line Testing:
 Before running this script in production, the following tests should be run to be sure that it is configured and working as expected in your environment.
 
@@ -125,7 +121,6 @@ Note: When in testing mode, you are warned that the script is in test mode and t
 
 
 #### Testing with the Storage Daemon:
-
 Now that the script is working as expected, it is time to test with the Storage Daemon by running a job which uses this tape drive device.
 
 Because the `test` command line option should still be in the SD's tape device configuration, we can just run a job:
@@ -233,5 +228,4 @@ Before going into production, make sure the tape drive is re-enabled. This can b
 ```
 
 ### Entering Production:
-
 To put this script into production, all that needs to be done after the testing is to remove the `test` command line parameter from the SD's tape drive device(s), restart the Storage Daemon, then monitor your Job log files and the `/opt/bacula/working/bacula-tapealert-py.log` if logging is left enabled.
