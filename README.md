@@ -39,17 +39,18 @@ For example:
 ```
 ArchiveDevice = /dev/tape/by-id/scsi-350223344ab000900-nst
 ControlDevice = /dev/tape/by-id/scsi-350223344ab000900-nst
-AlertCommand = "/opt/bacula/scripts/bacula-tapealert.py %l logging test"   *see notes about command line options below
+AlertCommand = "/opt/bacula/scripts/bacula-tapealert.py %l logging test" *see notes about command line options below
 ```
 
 ## INSTALLATION, CONFIGURATION, AND USE:
 
 ### Installation:
 To use this script in place of the default `/opt/bacula/scripts/tapealert` script, copy it to '/opt/bacula/scripts', set it executable, and set the owner to the user that the Bacula SD runs as (typically 'bacula'):
-
-\# cp bacula-tapealert.py /opt/bacula/scripts
-\# chmod u+x /opt/bacula/scripts/bacula-tapealert.py
-\# chown bacula:bacula /opt/bacula/scripts/bacula-tapealert.py
+```
+# cp bacula-tapealert.py /opt/bacula/scripts
+# chmod u+x /opt/bacula/scripts/bacula-tapealert.py
+# chown bacula:bacula /opt/bacula/scripts/bacula-tapealert.py
+```
 
 ### Configuration:
 Next, configure the SD's tape drive device resources with the additional `ControlDevice` and `AlertCommand` settings as described above.
