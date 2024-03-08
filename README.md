@@ -106,7 +106,7 @@ TapeAlert[21]
 2024-03-07 19:19:32 | ----------[ Starting /mnt/bta/bacula-tapealert.py v0.04 ]----------
 2024-03-07 19:19:32 | Drive Device: /dev/tape/by-id/scsi-350223344ab000900-nst
 2024-03-07 19:19:32 | The 'test' variable is True. Testing mode enabled!
-2024-03-07 19:19:32 - WARN: 7 TapeAlerts found for drive device /dev/tape/by-id/scsi-350223344ab000900-nst (Testing mode enabled. These example results are bogus.):
+2024-03-07 19:19:32 - WARN: 7 TapeAlerts found for drive device /dev/tape/by-id/scsi-350223344ab000900-nst (These test mode results are bogus)
 2024-03-07 19:19:32 -       [1]: Read: Having problems reading (slowing down).
 2024-03-07 19:19:32 -       [2]: Write: Having problems writing (losing capacity).
 2024-03-07 19:19:32 -       [3]: Hard Error: Uncorrectable read/write error.
