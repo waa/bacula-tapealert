@@ -1,7 +1,7 @@
 # bacula-tapealert
 A drop-in `tapealert` script replacement which automatically identifies the correct `sg` device node to test with the tapeinfo utility.
 
-##INTRODUCTION:
+## INTRODUCTION:
 
 The Bacula Storage Daemon (SD) 'Device{}' resource provides two settings which may be used to allow the SD to automatically check a tape drive device for any 'TapeAlert' messages at two times:
 
@@ -21,13 +21,13 @@ Historically, the `ControlDevice` would be set to a tape drive device's SCSI Gen
 
 The AlertCommand is typically set to point to the `/opt/bacula/scripts/tapealert` sample bash script which is shipped with Bacula, and the `%l` represents the "archive control channel name" (ie: ControlDevice) that will be passed to the AlertCommand script.
 
-##THE PROBLEM:
+## THE PROBLEM:
 
 A tape drive's SG node may change after a reboot, depending on when the kernel identifies and enumerates it. This represents a problem since the Bacula SD's Tape Drive resource configurations (including this ControlDevice setting) are usually set once during configuration and then left.
 
 If the ControlDevice setting is pointing to the wrong SG node, the TapeAlert feature in the Bacula SD will not function properly, because the AlertCommand script will be called with the wrong SG node to test.
 
-##THE SOLUTION:
+## THE SOLUTION:
 
 This `bacula-tapealert.py` drop-in replacement script! :)
 
@@ -42,21 +42,20 @@ ControlDevice = /dev/tape/by-id/scsi-350223344ab000900-nst
 AlertCommand = "/opt/bacula/scripts/bacula-tapealert.py %l logging test"   *see notes about command line options below
 '''
 
+## INSTALLATION, CONFIGURATION, AND USE:
 
-##INSTALLATION, CONFIGURATION, AND USE:
-
-###Installation:
+### Installation:
 To use this script in place of the default `/opt/bacula/scripts/tapealert` script, copy it to '/opt/bacula/scripts', set it executable, and set the owner to the user that the Bacula SD runs as (typically 'bacula'):
 
 \# cp bacula-tapealert.py /opt/bacula/scripts
 \# chmod u+x /opt/bacula/scripts/bacula-tapealert.py
 \# chown bacula:bacula /opt/bacula/scripts/bacula-tapealert.py
 
-###Configuration:
+### Configuration:
 Next, configure the SD's tape drive device resources with the additional `ControlDevice` and `AlertCommand` settings as described above.
 
 
-###Use:
+### Use:
 The following command line options may be used after the `%l` on the AlertCommand line:
 ```
 # /opt/bacula/scripts/bacula-tapealert.py -h
@@ -77,9 +76,9 @@ logging        Should the script log anything at all? Default is False!
 -v, --version  Print the script name and version.
 ```
 
-###Testing:
+### Testing:
 
-####Command Line Testing:
+#### Command Line Testing:
 Before running this script in production, the following tests should be run to be sure that it is configured and working as expected in your environment.
 
 First, run the script from the command line:
@@ -126,7 +125,7 @@ TapeAlert[21]
 Note: When in testing mode, you are warned that the script is in test mode and that the results are bogus.
 
 
-####Testing with the Storage Daemon:
+#### Testing with the Storage Daemon:
 
 Now that the script is working as expected, it is time to test with the Storage Daemon by running a job which uses this tape drive device.
 
@@ -225,15 +224,15 @@ Device Tape is "mhvtl-L80-Autochanger_Dev0" (/dev/tape/by-id/scsi-350223344ab000
 [...snip...]
 ```
 
-Before going into production, make sure the tape Drive is re-enabled. This can be done in one of two ways:
-- Restart the SD
-- Issue the bconsole enabled command:
+Before going into production, make sure the tape drive is re-enabled. This can be done in one of two ways:
+- Restart the Storage Daemon
+- Issue the bconsole enable command:
 ```
 * enable storage=mhvtl-L80-Autochanger drive=0
 3002 Device ""mhvtl-L80-Autochanger_Dev0" (/dev/tape/by-id/scsi-350223344ab000900-nst)" enabled.
 3004 Device ""mhvtl-L80-Autochanger_Dev0" (/dev/tape/by-id/scsi-350223344ab000900-nst)" deleted 1 alert.
 ```
 
-###Entering Production:
+### Entering Production:
 
 To put this script into production, all that needs to be done after the testing is to remove the `test` command line parameter from the SD's tape drive device(s), restart the Storage Daemon, then monitor your Job log files and the `/opt/bacula/working/bacula-tapealert-py.log` if logging is left enabled.
