@@ -1,5 +1,5 @@
-# bacula-tapealert
-A drop-in `tapealert` script replacement which automatically identifies the correct `sg` device node to test with the tapeinfo utility.
+# BACULA TAPEALERT
+This `bacula-tapealer.py` script is a drop-in `tapealert` script replacement which automatically identifies the correct `sg` device node to test with the tapeinfo utility.
 
 ## INTRODUCTION:
 
@@ -36,11 +36,11 @@ This script is able to automatically determine the *current* and correct SG node
 When using this script in place of the `/opt/bacula/scripts/tapealert` script, the ControlDevice should be set to the same tape drive device node as specified in the `ArchiveDevice` setting.
 
 For example:
-'''
+```
 ArchiveDevice = /dev/tape/by-id/scsi-350223344ab000900-nst
 ControlDevice = /dev/tape/by-id/scsi-350223344ab000900-nst
 AlertCommand = "/opt/bacula/scripts/bacula-tapealert.py %l logging test"   *see notes about command line options below
-'''
+```
 
 ## INSTALLATION, CONFIGURATION, AND USE:
 
