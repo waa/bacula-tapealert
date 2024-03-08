@@ -9,7 +9,7 @@
 #                   more features.
 #
 #                 - Initially this script adds the following features:
-#                   - Automatically detect, at run time, the correct /dev/sg
+#                   - Automatically detect at run time the correct /dev/sg
 #                     node to be called with the tapeinfo utility.
 #                   - Logging of actions, debug mode logging, or no logging
 #                     at all.
@@ -60,6 +60,7 @@ SerialNumber: 'XYZZY_B1  '
 TapeAlert[1]:          Read: Having problems reading (slowing down).
 TapeAlert[2]:         Write: Having problems writing (losing capacity).
 TapeAlert[3]:    Hard Error: Uncorrectable read/write error.
+TapeAlert[5]:  Read Failure: Tape faulty or tape drive broken.
 TapeAlert[13]:  Snapped Tape: The data cartridge contains a broken tape.
 TapeAlert[20]:     Clean Now: The tape drive neads cleaning NOW.
 TapeAlert[21]: Clean Periodic:The tape drive needs to be cleaned at next opportunity.
@@ -76,13 +77,13 @@ DataCompEnabled: yes
 DataCompCapable: yes
 DataDeCompEnabled: yes
 CompType: 0xff
-DeCompType: 0xff 
+DeCompType: 0xff
 """
 
 # ==================================================
 # Nothing below this line should need to be modified
 # ==================================================
-#
+
 # Import the required modules
 # ---------------------------
 import os
@@ -96,13 +97,13 @@ from datetime import datetime
 # Set some variables
 # ------------------
 progname = 'Bacula TapeAlert'
-version = '0.03'
-reldate = 'March 05, 2024'
+version = '0.04'
+reldate = 'March 07, 2024'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = 'bacula-tapealert.py'
 prog_info_txt = progname + ' - v' + version + ' - ' + scriptname \
-                + ' - By: ' + progauthor + ' ' + authoremail + ' (c) ' + reldate + '\n\n'
+              + ' - By: ' + progauthor + ' ' + authoremail + ' (c) ' + reldate + '\n\n'
 
 # Local system binaries required
 # ------------------------------
@@ -121,7 +122,7 @@ Options:
   test           Run in test mode? Edit the 'fake_tapeinfo_txt' string to suit.
   debug          Log a lot more output, including system utility outputs.
   logging        Should the script log anything at all? Default is False!
- 
+
   -f <logfile>   Where should the script append log file to? [default: /opt/bacula/working/bacula-tapealert-py.log]
 
   -h, --help     Print this help message.
@@ -133,7 +134,7 @@ Options:
 # ----------------------
 def now():
     'Return the current date/time in human readable format.'
-    return datetime.today().strftime('%Y%m%d%H%M%S')
+    return datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
 def usage():
     'Show the instructions and script information.'
@@ -182,9 +183,9 @@ def cmd_exists(cmd):
     return cmd_exists
 
 def get_uname():
-    'Get the OS uname to be use in other tests.'
+    'Get the OS uname for use in other tests.'
     cmd = 'uname'
-    log('Getting OS\'s uname so we can use it for other tests')
+    log('Getting OS\' uname for use in other tests')
     if debug:
         log('shell command: ' + cmd)
     result = get_shell_result(cmd)
@@ -196,9 +197,6 @@ def get_sg_node():
     'Given a drive_device, return the /dev/sg# node.'
     log('Determining the tape drive\'s scsi generic (sg) device node required by tapeinfo')
     if uname == 'Linux':
-        # TODO: waa - 20240302 - These lines before the if statement
-        # are not necessary. Probably are here for logging mainly.
-        # -----------------------------------------------------------
         cmd = 'ls -l ' + drive_device
         if debug:
             log('ls command: ' + cmd)
@@ -206,17 +204,21 @@ def get_sg_node():
         log_cmd_results(result)
         chk_cmd_result(result, cmd)
         if '/dev/sg' in drive_device:
-            # We have been passed an sg device, just return it
-            # and skip trying to match it in the lsscsi -g output
-            # ---------------------------------------------------
+            # A /dev/sg device was passed to the script, so
+            # issue a warning, skip trying to match it in the
+            # lsscsi -g output, and just return the /dev/sg node
+            # --------------------------------------------------
+            log('NOTE: A /dev/sg node was passed to this script.')
+            log('      Be aware that this may not be the correct sg node for the drive being tested')
+            log('      It is recommended to pass this script the same node set for the \'ArchiveDevice\'')
             return drive_device
-        elif '/dev/st' in drive_device or '/dev/nst' in drive_device:
-            # OK, we caught the simple /dev/st# or /dev/nst# case
-            # ---------------------------------------------------
+        elif any(x in drive_device for x in ('/dev/st', '/dev/nst')):
+            # A /dev/st# or /dev/nst# case was caught
+            # ---------------------------------------
             st = re.sub('.*(/dev/)n(.*)', '\\1\\2', drive_device, re.S)
-        elif '/by-id' in drive_device or '/by-path' in drive_device:
-            # OK, we caught the /dev/tape/by-id or /dev/tape/by-path case
-            # -----------------------------------------------------------
+        elif any(x in drive_device for x in ('/by-id', '/by-path')):
+            # A /dev/tape/by-id or /dev/tape/by-path case was caught
+            # ------------------------------------------------------
             st = '/dev/' + re.sub('.* -> .*/n*(st\d+).*$', '\\1', result.stdout.rstrip('\n'), re.S)
         cmd = 'lsscsi -g'
         if debug:
@@ -231,20 +233,6 @@ def get_sg_node():
             return sg
     elif uname == 'FreeBSD':
         sa = re.sub('/dev/(sa\d+)', '\\1', drive_device)
-        # On FreeBSD, tape drive device nodes are '/dev/sa#'
-        # and their corresponding scsi generic device nodes
-        # are '/dev/pass#'. We can correlate them with the
-        # 'camcontrol' command.
-        # --------------------------------------------------
-        # camcontrol devlist
-        # <VBOX HARDDISK 1.0>   at scbus0 target 0 lun 0 (pass0,ada0)
-        # <VBOX CD-ROM 1.0>     at scbus1 target 0 lun 0 (cd0,pass1)
-        # <STK L80 0107>        at scbus2 target 0 lun 0 (ch0,pass2)
-        # <STK T10000B 0107>    at scbus3 target 0 lun 0 (pass3,sa0)
-        # <STK T10000B 0107>    at scbus4 target 0 lun 0 (pass5,sa2)
-        # <STK T10000B 0107>    at scbus5 target 0 lun 0 (pass4,sa1)
-        # <STK T10000B 0107>    at scbus6 target 0 lun 0 (pass6,sa3)
-        # -----------------------------------------------------------
         cmd = 'camcontrol devlist'
         if debug:
             log('camcontrol command: ' + cmd)
@@ -258,7 +246,8 @@ def get_sg_node():
             return sg
     else:
         log('Failed to identify an sg node device for drive device ' + drive_device)
-        return 1
+        log('Exiting with return code 1')
+        sys.exit(1)
 
 def tapealerts(sg):
     'Call tapeinfo and return any tape alerts.'
@@ -268,11 +257,12 @@ def tapealerts(sg):
     result = get_shell_result(cmd)
     log_cmd_results(result)
     chk_cmd_result(result, cmd)
-    return re.findall('TapeAlert\[(\d+)\]: +(.*)', result.stdout)
+    return re.findall('(TapeAlert\[\d+\]): +(.*)', result.stdout)
 
 # ================
 # BEGIN THE SCRIPT
 # ================
+
 # Assign docopt doc string variable
 # ---------------------------------
 args = docopt(doc_opt_str, version='\n' + progname + ' - v' + version + '\n' + reldate + '\n')
@@ -287,6 +277,7 @@ debug = args['debug']
 
 # If the debug or logging variables are
 # True, set and create the log directory
+# if it does not exist
 # --------------------------------------
 if debug or logging:
     date_stamp = now()
@@ -294,14 +285,14 @@ if debug or logging:
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
-# Log some startup information to the log file
-# --------------------------------------------
+# Log some startup information
+# ----------------------------
 log('-'*10 + '[ Starting ' + sys.argv[0] + ' v' + version + ' ]' + '-'*10 , hdr=True)
 log('Drive Device: ' + drive_device, hdr=True)
 
 if test:
-    log('Testing mode enabled!', hdr=True)
-    tapealerts_txt = re.findall('TapeAlert\[(\d+)\]: +(.*)', fake_tapeinfo_txt)
+    log('The \'test\' variable is True. Testing mode enabled!', hdr=True)
+    tapealerts_txt = re.findall('(TapeAlert\[\d+\]): +(.*)', fake_tapeinfo_txt)
     sg = 'Testing mode enabled: These example results are bogus.'
 else:
     # Verify all binaries exist in path and are executable
@@ -310,7 +301,7 @@ else:
     for cmd in cmd_lst:
         bin = cmd_exists(cmd)
         if not bin:
-            log('Exiting return code 1')
+            log('Exiting with return code 1')
             sys.exit(1)
 
     # Get the OS' uname
@@ -321,29 +312,37 @@ else:
     # --------------------------------------------
     sg = get_sg_node()
 
-    # Now call tapealerts() to identify and output any tape alerts
-    # ------------------------------------------------------------
-    log('Checking for tapeinfo TapeAlerts')
+    # Call tapealerts() to identify any TapeAlerts
+    # and set the tapealerts_txt text variable
+    # --------------------------------------------
+    log('Calling tapeinfo to check for TapeAlerts')
     tapealerts_txt = tapealerts(sg)
 
-# Now, parse and print any TapeAlerts found
-# -----------------------------------------
+# Parse and print any TapeAlerts found
+# ------------------------------------
 if len(tapealerts_txt) > 0:
     log('WARN: ' + str(len(tapealerts_txt)) + ' TapeAlert' + ('s' if len(tapealerts_txt) > 1 else '') \
         + ' found for drive device ' + drive_device + ' (' + sg + '):')
     for alert in tapealerts_txt:
-        # The tape alert text needs to be printed to stdout for the SD to
-        # recognize and act on. The 'TapeAlert[xx]:' pre-text is not used
-        # by the SD, so it is not printed to stdout.
+        # The TapeAlert line(s) need to be printed to stdout for the SD to
+        # recognize and act on.
         #
-        # For example, if an actual TapeAlert is:
+        # The SD code is *only* looking for 'TapeAlert[%d]' and ignores
+        # everything after the ':' (colon), so we print just this part of
+        # any TapeAlert lines to stdout.
+        #
+        # For example, if an actual TapeAlert line is:
         # TapeAlert[13]: Snapped Tape: The data cartridge contains a broken tape.
         #
         # The script will just print the following to stdout:
-        # Snapped Tape: The data cartridge contains a broken tape.
+        # TapeAlert[13]
+        #
+        # If logging is enabled, the script will log the TapeAlert code and the
+        # rest of the TapeAlert line:
+        # [13]: Snapped Tape: The data cartridge contains a broken tape.
         # -----------------------------------------------------------------------
-        print(alert[1])
-        log('      [' + alert[0] + ']: ' + alert[1])
+        print(alert[0])
+        log('      ' + alert[0].replace('TapeAlert', '') + ': ' + alert[1])
 else:
     log('No TapeAlerts found')
 log('-'*100, ftr=True)
