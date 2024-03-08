@@ -1,8 +1,7 @@
 # BACULA TAPEALERT
-This `bacula-tapealer.py` script is a drop-in `tapealert` script replacement which automatically identifies the correct `sg` device node to test with the tapeinfo utility.
+This `bacula-tapealert.py` script is a drop-in `/opt/bacula/scripts/tapealert` replacement which automatically identifies the correct SCSI Generic (SG) device node to test with the tapeinfo utility.
 
 ## INTRODUCTION:
-
 The Bacula Storage Daemon (SD) 'Device{}' resource provides two settings which may be used to allow the SD to automatically check a tape drive device for any 'TapeAlert' messages at two times:
 
 - After a job finishes and the tape drive is idle
