@@ -97,7 +97,7 @@ from datetime import datetime
 # Set some variables
 # ------------------
 progname = 'Bacula TapeAlert'
-version = '0.04'
+version = '0.05'
 reldate = 'March 07, 2024'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
@@ -293,7 +293,7 @@ log('Drive Device: ' + drive_device, hdr=True)
 if test:
     log('The \'test\' variable is True. Testing mode enabled!', hdr=True)
     tapealerts_txt = re.findall('(TapeAlert\[\d+\]): +(.*)', fake_tapeinfo_txt)
-    sg = 'Testing mode enabled: These example results are bogus.'
+    sg = 'These test mode results are bogus'
 else:
     # Verify all binaries exist in path and are executable
     # ----------------------------------------------------
