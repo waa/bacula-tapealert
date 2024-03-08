@@ -13,7 +13,7 @@ Depending on the type of TapeAlert message(s) reported, the SD can then act on t
 
 The two SD device configuration settings to enable this feature are:
 
-- ControlDevice = /dev/sg4
+- ControlDevice = /path/to/some/dev/sg_node   *See below
 - AlertCommand = "/opt/bacula/scripts/tapealert %l"
 
 Historically, the `ControlDevice` would be set to a tape drive device's SCSI Generic (SG) node. For example: `/dev/sg4`
