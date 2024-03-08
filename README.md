@@ -84,13 +84,12 @@ Before running this script in production, the following tests should be run to b
 
 First, run the script from the command line:
 
-- Identify the ArchiveDevice setting in your SD tape drive device.
-
-We will use the `/dev/tape/by-id/scsi-350223344ab000900-nst` from the configuration example above.
+- Identify the ArchiveDevice setting in your SD tape drive device. We will use the `/dev/tape/by-id/scsi-350223344ab000900-nst` from the configuration example above.
 
 - Next, run the script, adding the `test` and `logging` command line options:
-
-\# /opt/bacula/scripts/bacula-tapealert.py /dev/tape/by-id/scsi-350223344ab000900-nst logging test 
+```
+# /opt/bacula/scripts/bacula-tapealert.py /dev/tape/by-id/scsi-350223344ab000900-nst logging test 
+```
 
 - When run with these two options, the `test` option will tell the script to ignore the device parameter, and instead use the sample `tapeinfo` output included in the script in the `fake_tapeinfo_txt` variable. This text variable contains some example `TapeAlert` lines that might be included in a tapeinfo output.
 
@@ -196,7 +195,7 @@ Check the tape drive users manual for device specific cleaning instructions.
   Termination:            *** Backup Error ***
 ```
 
-Notice that all the same alert codes (1, 2, 3, 513, 20, and 21) are repoted in the Job log by the SD, and in this case, since there are critical drive errors, the job is failed, and the tape drive is disabled.
+Notice that all the same alert codes (1, 2, 3, 5, 13, 20, and 21) are repoted in the Job log by the SD. In this case, since there are critical drive errors, the job is failed and the tape drive is disabled.
 
 We can see that the tape drive is indeed disabled with a status storage:
 ```
@@ -212,7 +211,7 @@ Device Tape is "mhvtl-L80-Autochanger_Dev0" (/dev/tape/by-id/scsi-350223344ab000
     Media type:  mhvtl-L80
     Total Bytes=4,838,400 Blocks=74 Bytes/block=65,383
     Positioned at File=1 Block=0
-    Device is disabled. User command.                                           <---- Drive has been disabled
+    Device is disabled. User command.                                           <---- DRIVE IS DISABLED
     Slot 37 is loaded in drive 0.
     Warning Alert: at 07-Mar-2024 19:29:44 Volume="G03037TA" alert=Read Warning
     Warning Alert: at 07-Mar-2024 19:29:44 Volume="G03037TA" alert=Write Warning
