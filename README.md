@@ -34,9 +34,9 @@ When using this script in place of the `/opt/bacula/scripts/tapealert` script, t
 
 For example:
 ```
-**ArchiveDevice =** /dev/tape/by-id/scsi-350223344ab000900-nst
-**ControlDevice =** /dev/tape/by-id/scsi-350223344ab000900-nst
-**AlertCommand =** "/opt/bacula/scripts/bacula-tapealert.py %l logging test" *see notes about command line options below
+ArchiveDevice = /dev/tape/by-id/scsi-350223344ab000900-nst
+ControlDevice = /dev/tape/by-id/scsi-350223344ab000900-nst
+AlertCommand = "/opt/bacula/scripts/bacula-tapealert.py %l logging test" *see notes about command line options below
 ```
 
 ## INSTALLATION:
