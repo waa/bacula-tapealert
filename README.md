@@ -21,7 +21,7 @@ Historically, the `ControlDevice` would be set to a tape drive device's SCSI Gen
 The `AlertCommand` is typically set to point to the '/opt/bacula/scripts/tapealert' sample bash script which is shipped with Bacula. The '%l' on the command line represents the "archive control channel name" (ie: ControlDevice) of the tape drive which will be passed to the AlertCommand script.
 
 ## THE PROBLEM:
-A tape drive's SG node may change after a reboot, depending on when the kernel identifies and enumerates it. This represents a problem since the Bacula SD's tape drive resource configurations (including this ControlDevice setting) are usually set once during configuration and then left.
+A tape drive's SG node may change after a reboot, depending on when the kernel identifies and enumerates it. This represents a problem since the Bacula SD's tape drive resource configurations (including this ControlDevice setting) are usually set once during configuration and then left alone and forgotten about.
 
 If the ControlDevice setting is pointing to the wrong SG node, the TapeAlert feature in the Bacula SD will not function properly because the AlertCommand script will be called with the wrong SG node to test.
 
