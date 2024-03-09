@@ -79,16 +79,16 @@ First, run the script from the command line:
 
 - Identify the ArchiveDevice setting in your SD tape drive device. We will use the `/dev/tape/by-id/scsi-350223344ab000900-nst` from the configuration example above.
 
-- Next, run the script, adding the `test` and `logging` command line options:
+- Next, run the script, adding the `logging` and `test` command line options:
 ```
-# /opt/bacula/scripts/bacula-tapealert.py /dev/tape/by-id/scsi-350223344ab000900-nst logging test 
+# /opt/bacula/scripts/bacula-tapealert.py /dev/tape/by-id/scsi-350223344ab000900-nst logging test
 ```
 
-- When run with these two options, the `test` option will tell the script to ignore the device parameter, and instead use the sample `tapeinfo` output included in the script in the `fake_tapeinfo_txt` variable. This text variable contains some example `TapeAlert` lines that might be included in a tapeinfo output.
+- The `logging` command line parameter enables logging to a file (default /opt/bacula/working/bacula-tapealert-py.log). **Note:** Without this option, the script does not log anything.
 
-Additionally, the `logging` parameter enables logging to a file (default /opt/bacula/working/bacula-tapealert-py.log). Without this option, the script does not log anything.
+- The `test` command line parameter, forces the script to ignore the **drive_device** command line parameter, and instead use the sample `tapeinfo` output included in the script in the `fake_tapeinfo_txt` text string variable. This text variable contains some example `TapeAlert` lines that might be included in a tapeinfo output when the drive indicates there is one or more issues. You may edit this `fake_tapeinfo_txt` as needed, including TapeAlert codes that you want/need to see tested and have them detected and handled by the SD.
 
-The output you should see when run the with above command line should be:
+The output you should see when the script is run the with above command line should just be the following:
 ```
 TapeAlert[1]
 TapeAlert[2]
@@ -99,7 +99,7 @@ TapeAlert[20]
 TapeAlert[21]
 ```
 
-- Because the `logging` command line variable was included, the following will appear in the /opt/bacula/working/bacula-tapealert-py.log file:
+- Because the `logging` command line variable was included, the following output will be appended to the /opt/bacula/working/bacula-tapealert-py.log file:
 ```
 2024-03-07 19:19:32 | ----------[ Starting /mnt/bta/bacula-tapealert.py v0.04 ]----------
 2024-03-07 19:19:32 | Drive Device: /dev/tape/by-id/scsi-350223344ab000900-nst
@@ -115,18 +115,17 @@ TapeAlert[21]
 | ----------------------------------------------------------------------------------------------------
 | Bacula TapeAlert - v0.04 - bacula-tapealert.py - By: Bill Arlofski waa@revpol.com (c) March 07, 2024
 ```
-Note: When in testing mode, you are warned that the script is in test mode and that the results are bogus.
-
+**Note:** When in testing mode, you are warned in the log file that the script is in test mode and that the results are bogus.
 
 ### Testing with the Storage Daemon:
-Now that the script is working as expected, it is time to test with the Storage Daemon by running a job which uses this tape drive device.
+Now that the script has been tested and is working as expected outside of Bacula, it is time to test it with the Bacula Storage Daemon by running a job which uses this tape drive device where the **ControlDevice** and **AlertCommand** settings have been added.
 
 Because the `test` command line option should still be in the SD's tape device configuration, we can just run a job:
 ```
 * run yes job=Linux-Etc-L80-Every4Mins
 ```
 
-Here is the Job log.
+Here is the Job log:
 ```
 07-Mar 19:29 ol9-sd JobId 25958: 3304 Issuing autochanger "load Volume G03037TA, Slot 37, Drive 0" command.
 07-Mar 19:29 ol9-sd JobId 25958: 3305 Autochanger "load Volume G03037TA, Slot 37, Drive 0", status is OK.
@@ -187,9 +186,9 @@ Check the tape drive users manual for device specific cleaning instructions.
   Termination:            *** Backup Error ***
 ```
 
-Notice that all the same alert codes (1, 2, 3, 5, 13, 20, and 21) are reported in the Job log by the SD. In this case, since there are critical drive errors, the job is failed and the tape drive is disabled.
+Notice that all of the same alert codes that we saw in the command line test output (1, 2, 3, 5, 13, 20, and 21) are reported in the Job log by the SD. In this case, since there were critical drive errors, the job was failed and the tape drive was disabled.
 
-We can see that the tape drive is indeed disabled with a status storage:
+We can verify that the tape drive was indeed disabled with a **bconsole** `status storage` command:
 ```
 * status storage=mhvtl-L80-Autochanger
 ```
@@ -216,7 +215,7 @@ Device Tape is "mhvtl-L80-Autochanger_Dev0" (/dev/tape/by-id/scsi-350223344ab000
 [...snip...]
 ```
 
-Before going into production, make sure the tape drive is re-enabled. This can be done in one of two ways:
+Before going into production, first make sure the tape drive is re-enabled. This can be done in one of two ways:
 1. Restart the Storage Daemon
 2. Issue the bconsole enable command:
 ```
@@ -226,4 +225,4 @@ Before going into production, make sure the tape drive is re-enabled. This can b
 ```
 
 ## PRODUCTION:
-To put this script into production, all that needs to be done after the testing is to remove the `test` command line parameter from the SD's tape drive device(s), restart the Storage Daemon, then monitor your Job log files and the `/opt/bacula/working/bacula-tapealert-py.log` if logging is left enabled.
+To put this script into production, all that needs to be done now is remove the `test` command line parameter from the SD's tape drive device configuration(s), restart the Storage Daemon, then monitor your Job log files and the `/opt/bacula/working/bacula-tapealert-py.log` if logging is left enabled.
