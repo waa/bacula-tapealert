@@ -77,7 +77,7 @@ Before running this script in production, the following tests should be run to b
 
 First, run the script from the command line:
 
-- Identify the ArchiveDevice setting in your SD tape drive device. We will use the `/dev/tape/by-id/scsi-350223344ab000900-nst` from the configuration example above.
+- Identify the **ArchiveDevice** setting in your SD tape drive device configuration. We will use the `/dev/tape/by-id/scsi-350223344ab000900-nst` from the configuration example above.
 
 - Next, run the script, adding the `logging` and `test` command line options:
 ```
@@ -86,7 +86,7 @@ First, run the script from the command line:
 
 - The `logging` command line parameter enables logging to a file (default /opt/bacula/working/bacula-tapealert-py.log). **Note:** Without this option, the script does not log anything.
 
-- The `test` command line parameter, forces the script to ignore the **drive_device** command line parameter, and instead use the sample `tapeinfo` output included in the script in the `fake_tapeinfo_txt` text string variable. This text variable contains some example `TapeAlert` lines that might be included in a tapeinfo output when the drive indicates there is one or more issues. You may edit this `fake_tapeinfo_txt` as needed, including TapeAlert codes that you want/need to see tested and have them detected and handled by the SD.
+- The `test` command line parameter forces the script to ignore the **drive_device** command line parameter, and instead use the sample 'tapeinfo' output included in the script in the `fake_tapeinfo_txt` text string variable. This text variable contains some example TapeAlert lines that might be included in a tapeinfo output when the drive indicates there are issues. You may edit this `fake_tapeinfo_txt` variable as needed, including TapeAlert codes that you want/need to see tested and have them detected and handled by the SD.
 
 The output you should see when the script is run the with above command line should just be the following:
 ```
