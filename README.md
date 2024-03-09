@@ -13,12 +13,12 @@ Depending on the type of TapeAlert message(s) reported, the SD can then act on t
 
 The two SD device configuration settings to enable this feature are:
 
-- ControlDevice = /path/to/some/dev/sg_node   *See below
-- AlertCommand = "/opt/bacula/scripts/tapealert %l"
+- **ControlDevice =** /path/to/some/dev/sg_node   *See below
+- **AlertCommand =** "/opt/bacula/scripts/tapealert %l"
 
 Historically, the `ControlDevice` would be set to a tape drive device's SCSI Generic (SG) node. For example: `/dev/sg4`
 
-The AlertCommand is typically set to point to the `/opt/bacula/scripts/tapealert` sample bash script which is shipped with Bacula. The `%l` on the command line represents the "archive control channel name" (ie: ControlDevice) of the tape drive which will be passed to the AlertCommand script.
+The `AlertCommand` is typically set to point to the `/opt/bacula/scripts/tapealert` sample bash script which is shipped with Bacula. The `%l` on the command line represents the "archive control channel name" (ie: ControlDevice) of the tape drive which will be passed to the AlertCommand script.
 
 ## THE PROBLEM:
 A tape drive's SG node may change after a reboot, depending on when the kernel identifies and enumerates it. This represents a problem since the Bacula SD's tape drive resource configurations (including this ControlDevice setting) are usually set once during configuration and then left.
@@ -28,15 +28,15 @@ If the ControlDevice setting is pointing to the wrong SG node, the TapeAlert fea
 ## THE SOLUTION:
 This `bacula-tapealert.py` drop-in replacement script! :)
 
-This script is able to automatically determine the *current* and correct SG node device for the tape drive on-the-fly.
+This script is able to automatically determine the *current* and *correct* SG node device for the tape drive on-the-fly.
 
-When using this script in place of the `/opt/bacula/scripts/tapealert` script, the ControlDevice should be set to the same tape drive device node as specified in the `ArchiveDevice` setting.
+When using this script in place of the `/opt/bacula/scripts/tapealert` script, the `ControlDevice` should be set to the same tape drive device node as specified in the `ArchiveDevice` setting.
 
 For example:
 ```
-ArchiveDevice = /dev/tape/by-id/scsi-350223344ab000900-nst
-ControlDevice = /dev/tape/by-id/scsi-350223344ab000900-nst
-AlertCommand = "/opt/bacula/scripts/bacula-tapealert.py %l logging test" *see notes about command line options below
+**ArchiveDevice =** /dev/tape/by-id/scsi-350223344ab000900-nst
+**ControlDevice =** /dev/tape/by-id/scsi-350223344ab000900-nst
+**AlertCommand =** "/opt/bacula/scripts/bacula-tapealert.py %l logging test" *see notes about command line options below
 ```
 
 ## INSTALLATION:
@@ -49,7 +49,6 @@ To use this script in place of the default `/opt/bacula/scripts/tapealert` scrip
 
 ## CONFIGURATION:
 Next, configure the SD's tape drive device resources with the additional `ControlDevice` and `AlertCommand` settings as described above.
-
 
 ## USE:
 The following command line options may be used:
@@ -188,7 +187,7 @@ Check the tape drive users manual for device specific cleaning instructions.
   Termination:            *** Backup Error ***
 ```
 
-Notice that all the same alert codes (1, 2, 3, 5, 13, 20, and 21) are repoted in the Job log by the SD. In this case, since there are critical drive errors, the job is failed and the tape drive is disabled.
+Notice that all the same alert codes (1, 2, 3, 5, 13, 20, and 21) are reported in the Job log by the SD. In this case, since there are critical drive errors, the job is failed and the tape drive is disabled.
 
 We can see that the tape drive is indeed disabled with a status storage:
 ```
@@ -218,8 +217,8 @@ Device Tape is "mhvtl-L80-Autochanger_Dev0" (/dev/tape/by-id/scsi-350223344ab000
 ```
 
 Before going into production, make sure the tape drive is re-enabled. This can be done in one of two ways:
-- Restart the Storage Daemon
-- Issue the bconsole enable command:
+1. Restart the Storage Daemon
+2. Issue the bconsole enable command:
 ```
 * enable storage=mhvtl-L80-Autochanger drive=0
 3002 Device ""mhvtl-L80-Autochanger_Dev0" (/dev/tape/by-id/scsi-350223344ab000900-nst)" enabled.
