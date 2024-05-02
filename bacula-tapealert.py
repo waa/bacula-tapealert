@@ -97,8 +97,8 @@ from datetime import datetime
 # Set some variables
 # ------------------
 progname = 'Bacula TapeAlert'
-version = '0.05'
-reldate = 'March 07, 2024'
+version = '0.06'
+reldate = 'May 02, 2024'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = 'bacula-tapealert.py'
@@ -219,27 +219,27 @@ def get_sg_node():
         elif any(x in drive_device for x in ('/by-id', '/by-path')):
             # A /dev/tape/by-id or /dev/tape/by-path case was caught
             # ------------------------------------------------------
-            st = '/dev/' + re.sub('.* -> .*/n*(st\d+).*$', '\\1', result.stdout.rstrip('\n'), re.S)
+            st = '/dev/' + re.sub('.* -> .*/n*(st\\d+).*$', '\\1', result.stdout.rstrip('\n'), re.S)
         cmd = 'lsscsi -g'
         if debug:
             log('lsscsi command: ' + cmd)
         result = get_shell_result(cmd)
         log_cmd_results(result)
         chk_cmd_result(result, cmd)
-        sg_search = re.search('.*' + st + ' .*(/dev/sg\d+)', result.stdout)
+        sg_search = re.search('.*' + st + ' .*(/dev/sg\\d+)', result.stdout)
         if sg_search:
             sg = sg_search.group(1)
             log('sg node for drive device: ' + drive_device + ' --> ' + sg)
             return sg
     elif uname == 'FreeBSD':
-        sa = re.sub('/dev/(sa\d+)', '\\1', drive_device)
+        sa = re.sub(r'/dev/(sa\d+)', '\\1', drive_device)
         cmd = 'camcontrol devlist'
         if debug:
             log('camcontrol command: ' + cmd)
         result = get_shell_result(cmd)
         log_cmd_results(result)
         chk_cmd_result(result, cmd)
-        sg_search = re.search('.*\((pass\d+),' + sa + '\)', result.stdout)
+        sg_search = re.search('.*\\((pass\\d+),' + sa + '\\)', result.stdout)
         if sg_search:
             sg = '/dev/' + sg_search.group(1)
             log('SG node for drive device: ' + drive_device + ' --> ' + sg)
@@ -257,7 +257,7 @@ def tapealerts(sg):
     result = get_shell_result(cmd)
     log_cmd_results(result)
     chk_cmd_result(result, cmd)
-    return re.findall('(TapeAlert\[\d+\]): +(.*)', result.stdout)
+    return re.findall(r'(TapeAlert\[\d+\]): +(.*)', result.stdout)
 
 # ================
 # BEGIN THE SCRIPT
@@ -292,7 +292,7 @@ log('Drive Device: ' + drive_device, hdr=True)
 
 if test:
     log('The \'test\' variable is True. Testing mode enabled!', hdr=True)
-    tapealerts_txt = re.findall('(TapeAlert\[\d+\]): +(.*)', fake_tapeinfo_txt)
+    tapealerts_txt = re.findall(r'(TapeAlert\[\d+\]): +(.*)', fake_tapeinfo_txt)
     sg = 'These test mode results are bogus'
 else:
     # Verify all binaries exist in path and are executable
