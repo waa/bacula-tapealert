@@ -97,8 +97,8 @@ from datetime import datetime
 # Set some variables
 # ------------------
 progname = 'Bacula TapeAlert'
-version = '0.06'
-reldate = 'May 02, 2024'
+version = '0.07'
+reldate = 'May 11, 2024'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = 'bacula-tapealert.py'
@@ -113,12 +113,13 @@ cmd_lst = ['ls', 'uname', 'lsscsi', 'tapeinfo']
 # ------------------------
 doc_opt_str = """
 Usage:
-  bacula-tapealert.py <drive_device> [logging] [-f <logfile>] [test] [debug]
+  bacula-tapealert.py <drive_device> [-i <jobid>] [logging] [-f <logfile>] [test] [debug]
   bacula-tapealert.py -h | --help
   bacula-tapealert.py -v | --version
 
 Options:
   drive_device   The drive's /dev/sg*, /dev/nst#, or /dev/tape/by-id/*-nst, or /dev/tape/by-path/* node.
+  -i <jobid>     The current Bacula Job's jobid.
   test           Run in test mode? Edit the 'fake_tapeinfo_txt' string in this script to suit.
   debug          Log a lot more output, including system utility outputs.
   logging        Should the script log anything at all? Default is False!
@@ -142,12 +143,14 @@ def usage():
     print(prog_info_txt)
     sys.exit(1)
 
-def log(text, hdr=False, ftr=False):
+def log(text, ftr=False):
     'Given some text, write the text to the log_file.'
     if debug or logging:
         with open(log_file, 'a+') as file:
-            file.write(('\n' if '[ Starting ' in text else '') \
-                        + (now() + ' ' if not ftr else '') + ('- ' if (not hdr and not ftr) else '| ') + text.rstrip('\n') + '\n')
+            file.write(('\n' if text.startswith('Starting') else '') \
+                        + (now() + ' ' if not ftr else '') + ('jobid: ' + jobid \
+                        + ' ' if jobid is not None and not ftr else '') \
+                        +  ('- ' if not ftr else '| ') + text.rstrip('\n') + '\n')
 
 def log_cmd_results(result):
     'Given a subprocess.run() result object, clean up the extra line feeds from stdout and stderr and log them.'
@@ -183,9 +186,9 @@ def cmd_exists(cmd):
     return cmd_exists
 
 def get_uname():
-    'Get the OS uname for use in other tests.'
+    'Get the systems uname for use in tests.'
     cmd = 'uname'
-    log('Getting OS\' uname for use in other tests')
+    log('Getting system\'s uname for use in tests')
     if debug:
         log('shell command: ' + cmd)
     result = get_shell_result(cmd)
@@ -195,7 +198,7 @@ def get_uname():
 
 def get_sg_node():
     'Given a drive_device, return the /dev/sg# node.'
-    log('Determining the tape drive\'s scsi generic (sg) device node required by tapeinfo')
+    log('Determining the tape drive device\'s sg node required by tapeinfo')
     if uname == 'Linux':
         cmd = 'ls -l ' + drive_device
         if debug:
@@ -229,7 +232,7 @@ def get_sg_node():
         sg_search = re.search('.*' + st + ' .*(/dev/sg\\d+)', result.stdout)
         if sg_search:
             sg = sg_search.group(1)
-            log('sg node for drive device: ' + drive_device + ' --> ' + sg)
+            log('sg node determined for drive device: ' + sg)
             return sg
     elif uname == 'FreeBSD':
         sa = re.sub(r'/dev/(sa\d+)', '\\1', drive_device)
@@ -270,6 +273,7 @@ args = docopt(doc_opt_str, version='\n' + progname + ' - v' + version + '\n' + r
 # Assign the args to variables
 # ----------------------------
 drive_device = args['<drive_device>']
+jobid = args['-i']
 logging = args['logging']
 log_file = args['-f']
 test = args['test']
@@ -287,8 +291,8 @@ if debug or logging:
 
 # Log some startup information
 # ----------------------------
-log('-'*10 + '[ Starting ' + sys.argv[0] + ' v' + version + ' ]' + '-'*10 , hdr=True)
-log('Drive Device: ' + drive_device, hdr=True)
+log('Starting ' + sys.argv[0])
+log('Drive Device: ' + drive_device)
 
 if test:
     log('The \'test\' variable is True. Testing mode enabled!', hdr=True)
@@ -304,8 +308,8 @@ else:
             log('Exiting with return code 1')
             sys.exit(1)
 
-    # Get the OS' uname
-    # -----------------
+    # Get the OS uname
+    # ----------------
     uname = get_uname()
 
     # Get the /dev/sg# node to check with tapeinfo
@@ -315,7 +319,7 @@ else:
     # Call tapealerts() to identify any TapeAlerts
     # and set the tapealerts_txt text variable
     # --------------------------------------------
-    log('Calling tapeinfo to check for TapeAlerts')
+    log('Calling tapeinfo to check drive for TapeAlerts')
     tapealerts_txt = tapealerts(sg)
 
 # Parse and print any TapeAlerts found
@@ -345,5 +349,5 @@ if len(tapealerts_txt) > 0:
         log('      ' + alert[0].replace('TapeAlert', '') + ': ' + alert[1])
 else:
     log('No TapeAlerts found')
-log('-'*100, ftr=True)
+log('-'*(len(prog_info_txt) - 2), ftr=True)
 log(prog_info_txt, ftr=True)
