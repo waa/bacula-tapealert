@@ -107,7 +107,7 @@ prog_info_txt = progname + ' - v' + version + ' - ' + scriptname \
 
 # Local system binaries required
 # ------------------------------
-cmd_lst = ['ls', 'uname', 'lsscsi', 'tapeinfo']
+cmd_lst = ['ls', 'lsscsi', 'tapeinfo', 'uname']
 
 # Define the docopt string
 # ------------------------
@@ -211,7 +211,7 @@ def get_sg_node():
             # issue a warning, skip trying to match it in the
             # lsscsi -g output, and just return the /dev/sg node
             # --------------------------------------------------
-            log('NOTE: A /dev/sg node was passed to this script.')
+            log('NOTE: A /dev/sg node was passed to this script')
             log('      Be aware that this may not be the correct sg node for the drive being tested')
             log('      It is recommended to pass this script the same node set for the \'ArchiveDevice\'')
             return drive_device
@@ -301,7 +301,7 @@ if test:
 else:
     # Verify all binaries exist in path and are executable
     # ----------------------------------------------------
-    log('Checking that system commands exist: ' + ', '.join(cmd_lst))
+    log('Checking that system utilities exist: ' + ', '.join(cmd_lst))
     for cmd in cmd_lst:
         bin = cmd_exists(cmd)
         if not bin:
@@ -325,8 +325,8 @@ else:
 # Parse and print any TapeAlerts found
 # ------------------------------------
 if len(tapealerts_txt) > 0:
-    log('WARN: ' + str(len(tapealerts_txt)) + ' TapeAlert' + ('s' if len(tapealerts_txt) > 1 else '') \
-        + ' found for drive device ' + drive_device + ' (' + sg + '):')
+    log('WARN: ' + str(len(tapealerts_txt)) + ' TapeAlert' \
+        + ('s' if len(tapealerts_txt) > 1 else '') + ' found for drive device:')
     for alert in tapealerts_txt:
         # The TapeAlert line(s) need to be printed to stdout for the SD to
         # recognize and act on.
