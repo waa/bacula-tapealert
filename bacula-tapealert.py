@@ -97,8 +97,8 @@ from datetime import datetime
 # Set some variables
 # ------------------
 progname = 'Bacula TapeAlert'
-version = '0.08'
-reldate = 'May 15, 2024'
+version = '0.09'
+reldate = 'May 21, 2024'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = 'bacula-tapealert.py'
@@ -168,10 +168,10 @@ def log_cmd_results(result):
 def chk_cmd_result(result, cmd):
     'Given a result object, check the returncode, then log and exit if non zero.'
     if debug:
-        if result.returncode != 0:
-            log('ERROR calling: ' + cmd)
-            log(result.stderr.rstrip('\n'))
-            sys.exit(result.returncode)
+        log('ERROR calling: ' + cmd)
+        log(result.stderr.rstrip('\n'))
+    if result.returncode != 0:
+        sys.exit(result.returncode)
 
 def get_shell_result(cmd):
     'Given a command to run, return the subprocess.run() result.'
