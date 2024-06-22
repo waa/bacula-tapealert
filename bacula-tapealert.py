@@ -90,15 +90,15 @@ import os
 import re
 import sys
 import shutil
+import argparse
 import subprocess
-from docopt import docopt
 from datetime import datetime
 
 # Set some variables
 # ------------------
 progname = 'Bacula TapeAlert'
-version = '0.09'
-reldate = 'May 21, 2024'
+version = '0.10'
+reldate = 'June 21, 2024'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = 'bacula-tapealert.py'
@@ -109,27 +109,18 @@ prog_info_txt = progname + ' - v' + version + ' - ' + scriptname \
 # ------------------------------
 cmd_lst = ['ls', 'lsscsi', 'tapeinfo', 'uname']
 
-# Define the docopt string
-# ------------------------
-doc_opt_str = """
-Usage:
-  bacula-tapealert.py <drive_device> [-i <jobid>] [logging] [-f <logfile>] [test] [debug]
-  bacula-tapealert.py -h | --help
-  bacula-tapealert.py -v | --version
-
-Options:
-  drive_device   The drive's /dev/sg*, /dev/nst#, or /dev/tape/by-id/*-nst, or /dev/tape/by-path/* node.
-  -i <jobid>     The current Bacula Job's jobid.
-  test           Run in test mode? Edit the 'fake_tapeinfo_txt' string in this script to suit.
-  debug          Log a lot more output, including system utility outputs.
-  logging        Should the script log anything at all? Default is False!
-
-  -f <logfile>   Where should the script append log file to? [default: /opt/bacula/working/bacula-tapealert-py.log]
-
-  -h, --help     Print this help message.
-  -v, --version  Print the script name and version.
-
-"""
+# Define the argparse arguments, descriptions, defaults, etc
+# waa - Something to look into: https://www.reddit.com/r/Python/comments/11hqsbv/i_am_sick_of_writing_argparse_boilerplate_code_so/
+# ---------------------------------------------------------------------------------------------------------------------------------
+parser = argparse.ArgumentParser(prog=scriptname, description='Drop-in replacement for tapealert bash/perl script with more features.')
+parser.add_argument('-v', '--version', help='Print the script version.', version=scriptname + " v" + version, action='version')
+parser.add_argument('-d', '--debug',   help='Log a lot more output, including system utility outputs.', action='store_true')
+parser.add_argument('-t', '--test',    help='Run in test mode? Edit the \'fake_tapeinfo_txt\' string in this script to suit.', action='store_true')
+parser.add_argument('-l', '--logging', help='Should the script log anything at all? Default is False!', action='store_true')
+parser.add_argument('-f', '--file',    help='Where should the script append log file to?', default='/opt/bacula/log/bacula-tapealert.log', type=argparse.FileType('a'))
+parser.add_argument('-i', '--jobid',   help='The jobid.', default=None)
+parser.add_argument('drive_device',    help='The drive\'s /dev/nst#, /dev/tape/by-id/*-nst, /dev/tape/by-path/* node.')
+args = parser.parse_args()
 
 # Now for some functions
 # ----------------------
@@ -265,19 +256,14 @@ def tapealerts(sg):
 # ================
 # BEGIN THE SCRIPT
 # ================
-
-# Assign docopt doc string variable
-# ---------------------------------
-args = docopt(doc_opt_str, version='\n' + progname + ' - v' + version + '\n' + reldate + '\n')
-
 # Assign the args to variables
 # ----------------------------
-drive_device = args['<drive_device>']
-jobid = args['-i']
-logging = args['logging']
-log_file = args['-f']
-test = args['test']
-debug = args['debug']
+debug = args.debug
+test = args.test
+logging = args.logging
+log_file = args.file.name
+jobid = args.jobid
+drive_device = args.drive_device
 
 # If the debug or logging variables are
 # True, set and create the log directory
@@ -291,7 +277,7 @@ if debug or logging:
 
 # Log some startup information
 # ----------------------------
-log('Starting ' + sys.argv[0])
+log('Starting ' + progname + ' v' + version)
 log('Drive Device: ' + drive_device)
 
 if test:
