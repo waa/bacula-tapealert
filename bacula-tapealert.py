@@ -97,8 +97,8 @@ from datetime import datetime
 # Set some variables
 # ------------------
 progname = 'Bacula TapeAlert'
-version = '0.10'
-reldate = 'June 21, 2024'
+version = '0.11'
+reldate = 'June 25, 2024'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = 'bacula-tapealert.py'
@@ -130,7 +130,7 @@ def now():
 
 def usage():
     'Show the instructions and script information.'
-    print(doc_opt_str)
+    parser.print_help()
     print(prog_info_txt)
     sys.exit(1)
 
@@ -281,7 +281,7 @@ log('Starting ' + progname + ' v' + version)
 log('Drive Device: ' + drive_device)
 
 if test:
-    log('The \'test\' variable is True. Testing mode enabled!', hdr=True)
+    log('The \'test\' variable is True. Testing mode enabled!')
     tapealerts_txt = re.findall(r'(TapeAlert\[\d+\]): +(.*)', fake_tapeinfo_txt)
     sg = 'These test mode results are bogus'
 else:
