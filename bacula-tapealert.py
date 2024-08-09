@@ -97,8 +97,8 @@ from datetime import datetime
 # Set some variables
 # ------------------
 progname = 'Bacula TapeAlert'
-version = '0.11'
-reldate = 'June 25, 2024'
+version = '0.12'
+reldate = 'August 08, 2024'
 progauthor = 'Bill Arlofski'
 authoremail = 'waa@revpol.com'
 scriptname = 'bacula-tapealert.py'
@@ -109,17 +109,27 @@ prog_info_txt = progname + ' - v' + version + ' - ' + scriptname \
 # ------------------------------
 cmd_lst = ['ls', 'lsscsi', 'tapeinfo', 'uname']
 
+# Set the do_email variable
+# -------------------------
+do_email = False
+
 # Define the argparse arguments, descriptions, defaults, etc
 # waa - Something to look into: https://www.reddit.com/r/Python/comments/11hqsbv/i_am_sick_of_writing_argparse_boilerplate_code_so/
 # ---------------------------------------------------------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(prog=scriptname, description='Drop-in replacement for tapealert bash/perl script with more features.')
 parser.add_argument('-v', '--version', help='Print the script version.', version=scriptname + " v" + version, action='version')
 parser.add_argument('-d', '--debug',   help='Log a lot more output, including system utility outputs.', action='store_true')
+parser.add_argument('-e', '--email',   help='Send email when TapeAlerts are detected?', default=None)
 parser.add_argument('-t', '--test',    help='Run in test mode? Edit the \'fake_tapeinfo_txt\' string in this script to suit.', action='store_true')
 parser.add_argument('-l', '--logging', help='Should the script log anything at all? Default is False!', action='store_true')
-parser.add_argument('-f', '--file',    help='Where should the script append log file to? Default: /opt/bacula/log/bacula-tapealert.log', default='/opt/bacula/log/bacula-tapealert.log', type=argparse.FileType('a'))
+parser.add_argument('-f', '--file',    help='Where should the script append log file to? [Default: /opt/bacula/log/bacula-tapealert.log]', \
+                    default='/opt/bacula/log/bacula-tapealert.log', type=argparse.FileType('a'))
 parser.add_argument('-i', '--jobid',   help='The jobid.', default=None)
-parser.add_argument('drive_device',    help='The drive\'s /dev/nst#, /dev/tape/by-id/*-nst, or /dev/tape/by-path/* node.')
+parser.add_argument('-u', '--smtpuser', help='The SMTP user. [Default: \'\']', default='')
+parser.add_argument('-p', '--smtppass', help='The SMTP password. [Default: \'\']', default='')
+parser.add_argument('--smtpserver', help='The SMTP server. [Default: localhost]', default='localhost')
+parser.add_argument('--smtpport', help='The SMTP port. [Default: 25]', default='25')
+parser.add_argument('drive_device', help='The drive\'s /dev/nst#, /dev/tape/by-id/*-nst, or /dev/tape/by-path/* node.')
 args = parser.parse_args()
 
 # Now for some functions
@@ -127,12 +137,6 @@ args = parser.parse_args()
 def now():
     'Return the current date/time in human readable format.'
     return datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-
-def usage():
-    'Show the instructions and script information.'
-    parser.print_help()
-    print(prog_info_txt)
-    sys.exit(1)
 
 def log(text, ftr=False):
     'Given some text, write the text to the log_file.'
@@ -158,11 +162,15 @@ def log_cmd_results(result):
 
 def chk_cmd_result(result, cmd):
     'Given a result object, check the returncode, then log and exit if non zero.'
-    if debug:
+    if debug and result.returncode != 0:
         log('ERROR calling: ' + cmd)
         log(result.stderr.rstrip('\n'))
     if result.returncode != 0:
-        sys.exit(result.returncode)
+        log(result.stderr.rstrip('\n'))
+        log('Exiting with return code 0')
+        log('-'*(len(prog_info_txt) - 2), ftr=True)
+        log(prog_info_txt, ftr=True)
+        sys.exit(0)
 
 def get_shell_result(cmd):
     'Given a command to run, return the subprocess.run() result.'
@@ -240,8 +248,8 @@ def get_sg_node():
             return sg
     else:
         log('Failed to identify an sg node device for drive device ' + drive_device)
-        log('Exiting with return code 1')
-        sys.exit(1)
+        log('Exiting with return code 0')
+        sys.exit(0)
 
 def tapealerts(sg):
     'Call tapeinfo and return any tape alerts.'
@@ -253,17 +261,46 @@ def tapealerts(sg):
     chk_cmd_result(result, cmd)
     return re.findall(r'(TapeAlert\[\d+\]): +(.*)', result.stdout)
 
+def send_email():
+    'Send the email.'
+    # Thank you to Aleksandr Varnin for this short and simple to implement solution
+    # https://blog.mailtrap.io/sending-emails-in-python-tutorial-with-code-examples
+    # -----------------------------------------------------------------------------
+    # f-strings require Python version 3.6 or above
+    message = f'''Content-Type: text/plain\nMIME-Version: 1.0\nTo: {email}\nFrom: {fromemail}\nSubject: {subject}\n\n{msg}'''
+    try:
+        with smtplib.SMTP(smtpserver, smtpport) as server:
+            if smtpuser != '' and smtppass != '':
+                server.login(smtpuser, smtppass)
+            server.sendmail(fromemail, email, message)
+            log('Successfully emailed TapeAlerts to: ' + email)
+    except (gaierror, ConnectionRefusedError):
+        log('Failed to connect to the SMTP server. Bad connection settings?')
+        sys.exit(0)
+    except smtplib.SMTPServerDisconnected:
+        log('Failed to connect to the SMTP server. Wrong user/password?')
+        sys.exit(0)
+    except smtplib.SMTPException as err:
+        log('Error occurred while communicating with SMTP server ' + smtpserver + ':' + str(smtpport))
+        log('  Error was: ' + str(err))
+        sys.exit(0)
+
 # ================
 # BEGIN THE SCRIPT
 # ================
 # Assign the args to variables
 # ----------------------------
-debug = args.debug
 test = args.test
+debug = args.debug
+jobid = args.jobid
 logging = args.logging
 log_file = args.file.name
-jobid = args.jobid
+email = fromemail = args.email
 drive_device = args.drive_device
+smtpuser = args.smtpuser
+smtppass = args.smtppass
+smtpport = args.smtpport
+smtpserver = args.smtpserver
 
 # If the debug or logging variables are
 # True, set and create the log directory
@@ -280,6 +317,15 @@ if debug or logging:
 log('Starting ' + progname + ' v' + version)
 log('Drive Device: ' + drive_device)
 
+# Do minor email validation and set the do_email
+# variable to True if we have what looks like an email
+# ----------------------------------------------------
+if email != None and '@' not in email:
+    log('email address \'' + email + '\' does not look like a valid email, will not attempt to send')
+elif email != None:
+    log('email is set to \'' + email + '\', will attempt to send')
+    do_email = True
+
 if test:
     log('The \'test\' variable is True. Testing mode enabled!')
     tapealerts_txt = re.findall(r'(TapeAlert\[\d+\]): +(.*)', fake_tapeinfo_txt)
@@ -291,8 +337,8 @@ else:
     for cmd in cmd_lst:
         bin = cmd_exists(cmd)
         if not bin:
-            log('Exiting with return code 1')
-            sys.exit(1)
+            log('Exiting with return code 0')
+            sys.exit(0)
 
     # Get the OS uname
     # ----------------
@@ -311,8 +357,9 @@ else:
 # Parse and print any TapeAlerts found
 # ------------------------------------
 if len(tapealerts_txt) > 0:
-    log('WARN: ' + str(len(tapealerts_txt)) + ' TapeAlert' \
-        + ('s' if len(tapealerts_txt) > 1 else '') + ' found for drive device:')
+    msg = ''
+    warn_txt = '(' + str(len(tapealerts_txt)) + ') TapeAlert' + ('s' if len(tapealerts_txt) > 1 else '')
+    log('WARN: ' + warn_txt + ' detected on drive device:')
     for alert in tapealerts_txt:
         # The TapeAlert line(s) need to be printed to stdout for the SD to
         # recognize and act on.
@@ -333,6 +380,14 @@ if len(tapealerts_txt) > 0:
         # -----------------------------------------------------------------------
         print(alert[0])
         log('      ' + alert[0].replace('TapeAlert', '') + ': ' + alert[1])
+        msg += alert[0] + ': ' + alert[1] + '\n'
+    if do_email:
+        import smtplib
+        from socket import gaierror
+        subject = progname + ' - WARN: ' + warn_txt + ' detected ' + ('during jobid: ' + jobid  + ' ' if jobid != None else '') + 'on device \'' + drive_device + '\''
+        msg_hdr = 'The following ' + warn_txt + (' were' if len(tapealerts_txt) > 1 else ' was') + ' detected:\n'
+        msg = msg_hdr + '-'*(len(msg_hdr) - 1) + '\n' + msg + '\n' + '-'*(len(prog_info_txt) - 2) + '\n' + prog_info_txt
+        send_email()
 else:
     log('No TapeAlerts found')
 log('-'*(len(prog_info_txt) - 2), ftr=True)
