@@ -117,9 +117,9 @@ parser.add_argument('-v', '--version', help='Print the script version.', version
 parser.add_argument('-d', '--debug',   help='Log a lot more output, including system utility outputs.', action='store_true')
 parser.add_argument('-t', '--test',    help='Run in test mode? Edit the \'fake_tapeinfo_txt\' string in this script to suit.', action='store_true')
 parser.add_argument('-l', '--logging', help='Should the script log anything at all? Default is False!', action='store_true')
-parser.add_argument('-f', '--file',    help='Where should the script append log file to?', default='/opt/bacula/log/bacula-tapealert.log', type=argparse.FileType('a'))
+parser.add_argument('-f', '--file',    help='Where should the script append log file to? Default: /opt/bacula/log/bacula-tapealert.log', default='/opt/bacula/log/bacula-tapealert.log', type=argparse.FileType('a'))
 parser.add_argument('-i', '--jobid',   help='The jobid.', default=None)
-parser.add_argument('drive_device',    help='The drive\'s /dev/nst#, /dev/tape/by-id/*-nst, /dev/tape/by-path/* node.')
+parser.add_argument('drive_device',    help='The drive\'s /dev/nst#, /dev/tape/by-id/*-nst, or /dev/tape/by-path/* node.')
 args = parser.parse_args()
 
 # Now for some functions
