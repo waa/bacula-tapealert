@@ -54,7 +54,7 @@ Next, configure the SD's tape drive device resources with the additional `Contro
 The following command line options may be used:
 ```
 # /opt/bacula/scripts/bacula-tapealert.py -h
-usage: bacula-tapealert.py [-h] [-v] [-d] [-t] [-l] [-f FILE] [-i JOBID] drive_device
+usage: bacula-tapealert.py [-h] [-v] [-d] [-e EMAIL] [-t] [-l] [-f FILE] [-i JOBID] [-u SMTPUSER] [-p SMTPPASS] [--smtpserver SMTPSERVER] [--smtpport SMTPPORT] drive_device
 
 Drop-in replacement for tapealert bash/perl script with more features.
 
@@ -65,10 +65,15 @@ optional arguments:
 -h, --help               Show this help message and exit
 -v, --version            Print the script version.
 -d, --debug              Log a lot more output, including system utility outputs.
+-e EMAIL, --email EMAIL  Send email when TapeAlerts are detected?
 -t, --test               Run in test mode? Edit the 'fake_tapeinfo_txt' string in this script to suit.
 -l, --logging            Should the script log anything at all? Default is False!
--f FILE, --file FILE     Where should the script append log file to? Default: /opt/bacula/log/bacula-tapealert.log
+-f FILE, --file FILE     Where should the script append log file to? [Default: /opt/bacula/log/bacula-tapealert.log]
 -i JOBID, --jobid JOBID  The jobid.
+-u SMTPUSER, --smtpuser  The SMTPUSER SMTP user. [Default: '']
+-p SMTPPASS, --smtppass  The SMTPPASS SMTP password. [Default: '']
+--smtpserver SMTPSERVER  The SMTP server. [Default: localhost]
+--smtpport SMTPPORT      The SMTP port. [Default: 25]
 ```
 
 ## TESTING:
